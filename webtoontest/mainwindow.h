@@ -17,6 +17,9 @@
 #include <QLabel>//QLabel를 사용하기 위한 라이브러리
 #include <QMessageBox>//QMessageBox를 사용하기 위한 라이브러리
 #include <QScrollArea>
+#include <QStandardItemModel>
+#include <QTableView>
+#include <QRegularExpression>
 
 
 namespace Ui {
@@ -37,6 +40,7 @@ private:
     Ui::MainWindow *ui;
 
     QTcpSocket* m_socket;
+    QString fileType;
 
 signals:
     void signal_newMessage(QString);
@@ -54,5 +58,8 @@ private slots:
     void on_reg_gobtn_clicked();
     void on_loginbtn_clicked();
     void on_tabWidget_tabBarClicked(int index);
+    void slot_displayMessage(const QString& str);
+    void onTableCellClicked(const QModelIndex &index);
+
 };
 #endif // MAINWINDOW_H

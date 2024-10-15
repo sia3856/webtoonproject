@@ -25,8 +25,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     // [ex.02.1.3]
     // signal_newMessage 시그널이 발생하면 (socket read 가 아닌, MainWindow 시그널)
     // slot_displayMessage 실행하여 UI에 출력
-    // connect(this, &MainWindow::signal_newMessage,
-    //         this, &MainWindow::slot_displayMessage);
+    connect(this, &MainWindow::signal_newMessage,
+             this, &MainWindow::slot_displayMessage);
 
     // [ex.02.1.4]
     // 연결된 소켓과 연결이 해제되면,
@@ -39,6 +39,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     // 이 객체의(MainWindow) slot_displayError 슬롯 함수 실행하여 처리
     connect(m_socket, &QAbstractSocket::errorOccurred,
             this,     &MainWindow::slot_displayError);
+
+    //테이블을 눌렀을떄
+    connect(ui->test_table, &QTableView::clicked, this, &MainWindow::onTableCellClicked);
 
 }
 
@@ -131,6 +134,52 @@ void MainWindow::slot_readSocket()
         QString message = QString("%1 :: %2").arg(m_socket->socketDescriptor()).arg(QString::fromStdString(buffer.toStdString()));
         emit signal_newMessage(message);
     }
+
+}
+
+void MainWindow::slot_displayMessage(const QString& str)
+{
+    ui->test_bro->append(str);
+    QString rstr = str;
+
+    rstr.remove(QRegularExpression("^\\d+ :: "));
+    QStringList rows = rstr.split("\n");
+
+    QStandardItemModel *model = new QStandardItemModel();
+    model->setColumnCount(2); // 제목과 작가 두 열 설정
+    model->setHorizontalHeaderLabels(QStringList() << "제목" << "작가");
+
+    for (const QString &row : rows) {
+        QStringList columns = row.split("/");
+        if (columns.size() == 2) {
+            QList<QStandardItem*> items;
+            items << new QStandardItem(columns[0].trimmed())
+                  << new QStandardItem(columns[1].trimmed());
+            model->appendRow(items);
+        }
+    }
+
+    // QTableView 생성 및 모델 설정
+
+    ui->test_table->setModel(model);
+
+    // 열 너비 자동 조정
+    ui->test_table->resizeColumnsToContents();
+
+    ui->test_table->show();
+
+
+}
+
+
+void MainWindow::onTableCellClicked(const QModelIndex &index)
+{
+    int row = index.row();
+    int column = index.column();
+
+
+    // 여기서 원하는 동작 수행
+    qDebug() << "Clicked cell:" << row << column;
 }
 
 
