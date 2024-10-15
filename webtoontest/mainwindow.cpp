@@ -5,7 +5,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
     ui->setupUi(this);
     ui->stackedWidget->setCurrentWidget(ui->login); // 첫화면을 로그인 화면으로 출력
-    this->setWindowTitle("민호의 비밀서재"); // 프로그램 이름설정
+    this->setWindowTitle("복이의 비밀서재"); // 프로그램 이름설정
 
     m_socket = new QTcpSocket(this);
     m_socket->connectToHost(QHostAddress::LocalHost,8080);
@@ -19,26 +19,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QMessageBox::critical(this,"QTCPClient", QString("The following error occurred: %1.").arg(m_socket->errorString()));
         exit(EXIT_FAILURE);
     }
-    connect(m_socket, &QTcpSocket::readyRead,
-            this,     &MainWindow::slot_readSocket);
+    connect(m_socket, &QTcpSocket::readyRead, this, &MainWindow::slot_readSocket);
 
     // [ex.02.1.3]
     // signal_newMessage 시그널이 발생하면 (socket read 가 아닌, MainWindow 시그널)
     // slot_displayMessage 실행하여 UI에 출력
-    connect(this, &MainWindow::signal_newMessage,
-             this, &MainWindow::slot_displayMessage);
+    connect(this, &MainWindow::signal_newMessage, this, &MainWindow::slot_displayMessage);
 
     // [ex.02.1.4]
     // 연결된 소켓과 연결이 해제되면,
     // 이 객체의(MainWindow) slot_discardSocket 슬롯 함수 실행하여 처리
-    connect(m_socket, &QTcpSocket::disconnected,
-            this,     &MainWindow::slot_discardSocket);
+    connect(m_socket, &QTcpSocket::disconnected, this, &MainWindow::slot_discardSocket);
 
     // [ex.02.1.4]
     // 연결된 소켓에 문제가 발생하면,
     // 이 객체의(MainWindow) slot_displayError 슬롯 함수 실행하여 처리
-    connect(m_socket, &QAbstractSocket::errorOccurred,
-            this,     &MainWindow::slot_displayError);
+    connect(m_socket, &QAbstractSocket::errorOccurred, this, &MainWindow::slot_displayError);
 
     //테이블을 눌렀을떄
     connect(ui->test_table, &QTableView::clicked, this, &MainWindow::onTableCellClicked);
