@@ -25,7 +25,6 @@
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QTableView>
-#include <QtWidgets/QTextBrowser>
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
@@ -56,7 +55,6 @@ public:
     QSpacerItem *verticalSpacer_2;
     QPushButton *f_pwbtn;
     QTextEdit *login_log;
-    QLabel *lbl;
     QWidget *find_pw;
     QGridLayout *gridLayout_8;
     QFrame *frame_4;
@@ -74,21 +72,23 @@ public:
     QGridLayout *gridLayout;
     QFrame *frame_2;
     QGridLayout *gridLayout_5;
-    QTextEdit *reg_log;
+    QSpacerItem *horizontalSpacer_7;
     QLabel *reg_nalb;
     QLineEdit *reg_name;
-    QSpacerItem *horizontalSpacer_7;
     QLabel *reg_pnlb;
     QLineEdit *reg_pn;
     QPushButton *pn_ckbtn;
-    QSpacerItem *horizontalSpacer_8;
+    QLabel *ovl_pn;
     QLabel *reg_idlb;
     QLineEdit *reg_id;
     QPushButton *id_ckbtn;
+    QLabel *ovl_id;
     QLabel *reg_pwlb;
     QLineEdit *reg_pw;
-    QPushButton *reg_btn;
     QSpacerItem *verticalSpacer_4;
+    QSpacerItem *horizontalSpacer_9;
+    QTextEdit *reg_log;
+    QPushButton *reg_btn;
     QWidget *main_page;
     QGridLayout *gridLayout_10;
     QFrame *frame_5;
@@ -97,8 +97,8 @@ public:
     QTabWidget *tabWidget;
     QWidget *all_tab;
     QGridLayout *gridLayout_11;
-    QTextBrowser *test_bro;
     QTableView *test_table;
+    QLabel *lbl;
     QWidget *author_tab;
     QListView *listView;
     QWidget *find_id;
@@ -126,6 +126,8 @@ public:
         centralwidget = new QWidget(MainWindow);
         centralwidget->setObjectName("centralwidget");
         verticalLayout = new QVBoxLayout(centralwidget);
+        verticalLayout->setSpacing(6);
+        verticalLayout->setContentsMargins(11, 11, 11, 11);
         verticalLayout->setObjectName("verticalLayout");
         textEdit = new QTextEdit(centralwidget);
         textEdit->setObjectName("textEdit");
@@ -144,18 +146,24 @@ public:
         verticalLayout->addWidget(textEdit);
 
         gridLayout_2 = new QGridLayout();
+        gridLayout_2->setSpacing(6);
         gridLayout_2->setObjectName("gridLayout_2");
         stackedWidget = new QStackedWidget(centralwidget);
         stackedWidget->setObjectName("stackedWidget");
         login = new QWidget();
         login->setObjectName("login");
         gridLayout_3 = new QGridLayout(login);
+        gridLayout_3->setSpacing(6);
+        gridLayout_3->setContentsMargins(11, 11, 11, 11);
         gridLayout_3->setObjectName("gridLayout_3");
         frame = new QFrame(login);
         frame->setObjectName("frame");
+        frame->setStyleSheet(QString::fromUtf8(""));
         frame->setFrameShape(QFrame::Shape::StyledPanel);
         frame->setFrameShadow(QFrame::Shadow::Raised);
         gridLayout_4 = new QGridLayout(frame);
+        gridLayout_4->setSpacing(6);
+        gridLayout_4->setContentsMargins(11, 11, 11, 11);
         gridLayout_4->setObjectName("gridLayout_4");
         reg_gobtn = new QPushButton(frame);
         reg_gobtn->setObjectName("reg_gobtn");
@@ -189,6 +197,7 @@ public:
 
         in_pw = new QLineEdit(frame);
         in_pw->setObjectName("in_pw");
+        in_pw->setEchoMode(QLineEdit::EchoMode::Password);
 
         gridLayout_4->addWidget(in_pw, 2, 2, 1, 3);
 
@@ -222,11 +231,6 @@ public:
 
         gridLayout_4->addWidget(login_log, 0, 1, 1, 5);
 
-        lbl = new QLabel(frame);
-        lbl->setObjectName("lbl");
-
-        gridLayout_4->addWidget(lbl, 0, 0, 1, 1);
-
 
         gridLayout_3->addWidget(frame, 0, 0, 1, 1);
 
@@ -234,18 +238,25 @@ public:
         find_pw = new QWidget();
         find_pw->setObjectName("find_pw");
         gridLayout_8 = new QGridLayout(find_pw);
+        gridLayout_8->setSpacing(6);
+        gridLayout_8->setContentsMargins(11, 11, 11, 11);
         gridLayout_8->setObjectName("gridLayout_8");
         frame_4 = new QFrame(find_pw);
         frame_4->setObjectName("frame_4");
+        frame_4->setStyleSheet(QString::fromUtf8(""));
         frame_4->setFrameShape(QFrame::Shape::StyledPanel);
         frame_4->setFrameShadow(QFrame::Shadow::Raised);
         gridLayout_9 = new QGridLayout(frame_4);
+        gridLayout_9->setSpacing(6);
+        gridLayout_9->setContentsMargins(11, 11, 11, 11);
         gridLayout_9->setObjectName("gridLayout_9");
         find_log_2 = new QTextEdit(frame_4);
         find_log_2->setObjectName("find_log_2");
         find_log_2->setMaximumSize(QSize(16777215, 300));
-        find_log_2->setStyleSheet(QString::fromUtf8("border: none;\n"
-""));
+        find_log_2->setStyleSheet(QString::fromUtf8("#find_log_2{\n"
+"	background: transparent;\n"
+"	border: none;\n"
+"}"));
         find_log_2->setReadOnly(true);
 
         gridLayout_9->addWidget(find_log_2, 0, 1, 1, 2);
@@ -294,87 +305,101 @@ public:
         reg_page = new QWidget();
         reg_page->setObjectName("reg_page");
         gridLayout = new QGridLayout(reg_page);
+        gridLayout->setSpacing(6);
+        gridLayout->setContentsMargins(11, 11, 11, 11);
         gridLayout->setObjectName("gridLayout");
         frame_2 = new QFrame(reg_page);
         frame_2->setObjectName("frame_2");
         frame_2->setFrameShape(QFrame::Shape::StyledPanel);
         frame_2->setFrameShadow(QFrame::Shadow::Raised);
         gridLayout_5 = new QGridLayout(frame_2);
+        gridLayout_5->setSpacing(6);
+        gridLayout_5->setContentsMargins(11, 11, 11, 11);
         gridLayout_5->setObjectName("gridLayout_5");
+        horizontalSpacer_7 = new QSpacerItem(114, 20, QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Minimum);
+
+        gridLayout_5->addItem(horizontalSpacer_7, 0, 0, 1, 1);
+
+        reg_nalb = new QLabel(frame_2);
+        reg_nalb->setObjectName("reg_nalb");
+
+        gridLayout_5->addWidget(reg_nalb, 2, 1, 1, 1);
+
+        reg_name = new QLineEdit(frame_2);
+        reg_name->setObjectName("reg_name");
+
+        gridLayout_5->addWidget(reg_name, 2, 2, 1, 1);
+
+        reg_pnlb = new QLabel(frame_2);
+        reg_pnlb->setObjectName("reg_pnlb");
+
+        gridLayout_5->addWidget(reg_pnlb, 3, 1, 1, 1);
+
+        reg_pn = new QLineEdit(frame_2);
+        reg_pn->setObjectName("reg_pn");
+
+        gridLayout_5->addWidget(reg_pn, 3, 2, 1, 1);
+
+        pn_ckbtn = new QPushButton(frame_2);
+        pn_ckbtn->setObjectName("pn_ckbtn");
+
+        gridLayout_5->addWidget(pn_ckbtn, 3, 3, 1, 1);
+
+        ovl_pn = new QLabel(frame_2);
+        ovl_pn->setObjectName("ovl_pn");
+
+        gridLayout_5->addWidget(ovl_pn, 3, 4, 1, 1);
+
+        reg_idlb = new QLabel(frame_2);
+        reg_idlb->setObjectName("reg_idlb");
+
+        gridLayout_5->addWidget(reg_idlb, 4, 1, 1, 1);
+
+        reg_id = new QLineEdit(frame_2);
+        reg_id->setObjectName("reg_id");
+
+        gridLayout_5->addWidget(reg_id, 4, 2, 1, 1);
+
+        id_ckbtn = new QPushButton(frame_2);
+        id_ckbtn->setObjectName("id_ckbtn");
+
+        gridLayout_5->addWidget(id_ckbtn, 4, 3, 1, 1);
+
+        ovl_id = new QLabel(frame_2);
+        ovl_id->setObjectName("ovl_id");
+
+        gridLayout_5->addWidget(ovl_id, 4, 4, 1, 1);
+
+        reg_pwlb = new QLabel(frame_2);
+        reg_pwlb->setObjectName("reg_pwlb");
+
+        gridLayout_5->addWidget(reg_pwlb, 5, 1, 1, 1);
+
+        reg_pw = new QLineEdit(frame_2);
+        reg_pw->setObjectName("reg_pw");
+
+        gridLayout_5->addWidget(reg_pw, 5, 2, 1, 1);
+
+        verticalSpacer_4 = new QSpacerItem(20, 62, QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Expanding);
+
+        gridLayout_5->addItem(verticalSpacer_4, 7, 3, 1, 1);
+
+        horizontalSpacer_9 = new QSpacerItem(148, 20, QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Minimum);
+
+        gridLayout_5->addItem(horizontalSpacer_9, 2, 4, 1, 1);
+
         reg_log = new QTextEdit(frame_2);
         reg_log->setObjectName("reg_log");
         reg_log->setMaximumSize(QSize(16777215, 300));
         reg_log->setStyleSheet(QString::fromUtf8("border:none;"));
         reg_log->setReadOnly(true);
 
-        gridLayout_5->addWidget(reg_log, 0, 1, 1, 4);
-
-        reg_nalb = new QLabel(frame_2);
-        reg_nalb->setObjectName("reg_nalb");
-
-        gridLayout_5->addWidget(reg_nalb, 1, 1, 1, 1);
-
-        reg_name = new QLineEdit(frame_2);
-        reg_name->setObjectName("reg_name");
-
-        gridLayout_5->addWidget(reg_name, 1, 2, 1, 2);
-
-        horizontalSpacer_7 = new QSpacerItem(191, 20, QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Minimum);
-
-        gridLayout_5->addItem(horizontalSpacer_7, 2, 0, 1, 1);
-
-        reg_pnlb = new QLabel(frame_2);
-        reg_pnlb->setObjectName("reg_pnlb");
-
-        gridLayout_5->addWidget(reg_pnlb, 2, 1, 1, 1);
-
-        reg_pn = new QLineEdit(frame_2);
-        reg_pn->setObjectName("reg_pn");
-
-        gridLayout_5->addWidget(reg_pn, 2, 2, 1, 2);
-
-        pn_ckbtn = new QPushButton(frame_2);
-        pn_ckbtn->setObjectName("pn_ckbtn");
-
-        gridLayout_5->addWidget(pn_ckbtn, 2, 4, 1, 1);
-
-        horizontalSpacer_8 = new QSpacerItem(191, 27, QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Minimum);
-
-        gridLayout_5->addItem(horizontalSpacer_8, 2, 5, 1, 1);
-
-        reg_idlb = new QLabel(frame_2);
-        reg_idlb->setObjectName("reg_idlb");
-
-        gridLayout_5->addWidget(reg_idlb, 3, 1, 1, 1);
-
-        reg_id = new QLineEdit(frame_2);
-        reg_id->setObjectName("reg_id");
-
-        gridLayout_5->addWidget(reg_id, 3, 2, 1, 2);
-
-        id_ckbtn = new QPushButton(frame_2);
-        id_ckbtn->setObjectName("id_ckbtn");
-
-        gridLayout_5->addWidget(id_ckbtn, 3, 4, 1, 1);
-
-        reg_pwlb = new QLabel(frame_2);
-        reg_pwlb->setObjectName("reg_pwlb");
-
-        gridLayout_5->addWidget(reg_pwlb, 4, 1, 1, 1);
-
-        reg_pw = new QLineEdit(frame_2);
-        reg_pw->setObjectName("reg_pw");
-
-        gridLayout_5->addWidget(reg_pw, 4, 2, 1, 2);
+        gridLayout_5->addWidget(reg_log, 0, 1, 2, 3);
 
         reg_btn = new QPushButton(frame_2);
         reg_btn->setObjectName("reg_btn");
 
-        gridLayout_5->addWidget(reg_btn, 5, 2, 1, 1);
-
-        verticalSpacer_4 = new QSpacerItem(20, 62, QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Expanding);
-
-        gridLayout_5->addItem(verticalSpacer_4, 6, 3, 1, 1);
+        gridLayout_5->addWidget(reg_btn, 6, 2, 1, 2);
 
 
         gridLayout->addWidget(frame_2, 0, 0, 1, 1);
@@ -383,12 +408,16 @@ public:
         main_page = new QWidget();
         main_page->setObjectName("main_page");
         gridLayout_10 = new QGridLayout(main_page);
+        gridLayout_10->setSpacing(6);
+        gridLayout_10->setContentsMargins(11, 11, 11, 11);
         gridLayout_10->setObjectName("gridLayout_10");
         frame_5 = new QFrame(main_page);
         frame_5->setObjectName("frame_5");
         frame_5->setFrameShape(QFrame::Shape::StyledPanel);
         frame_5->setFrameShadow(QFrame::Shadow::Raised);
         gridLayout_12 = new QGridLayout(frame_5);
+        gridLayout_12->setSpacing(6);
+        gridLayout_12->setContentsMargins(11, 11, 11, 11);
         gridLayout_12->setObjectName("gridLayout_12");
         reg_log_2 = new QTextEdit(frame_5);
         reg_log_2->setObjectName("reg_log_2");
@@ -403,18 +432,21 @@ public:
         all_tab = new QWidget();
         all_tab->setObjectName("all_tab");
         gridLayout_11 = new QGridLayout(all_tab);
+        gridLayout_11->setSpacing(6);
+        gridLayout_11->setContentsMargins(11, 11, 11, 11);
         gridLayout_11->setObjectName("gridLayout_11");
-        test_bro = new QTextBrowser(all_tab);
-        test_bro->setObjectName("test_bro");
-
-        gridLayout_11->addWidget(test_bro, 0, 0, 1, 1);
-
         test_table = new QTableView(all_tab);
         test_table->setObjectName("test_table");
         test_table->setEditTriggers(QAbstractItemView::EditTrigger::NoEditTriggers);
         test_table->setDragEnabled(true);
 
         gridLayout_11->addWidget(test_table, 0, 1, 1, 1);
+
+        lbl = new QLabel(all_tab);
+        lbl->setObjectName("lbl");
+        lbl->setMaximumSize(QSize(16777215, 16777215));
+
+        gridLayout_11->addWidget(lbl, 0, 0, 1, 1);
 
         tabWidget->addTab(all_tab, QString());
         author_tab = new QWidget();
@@ -433,12 +465,16 @@ public:
         find_id = new QWidget();
         find_id->setObjectName("find_id");
         gridLayout_7 = new QGridLayout(find_id);
+        gridLayout_7->setSpacing(6);
+        gridLayout_7->setContentsMargins(11, 11, 11, 11);
         gridLayout_7->setObjectName("gridLayout_7");
         frame_3 = new QFrame(find_id);
         frame_3->setObjectName("frame_3");
         frame_3->setFrameShape(QFrame::Shape::StyledPanel);
         frame_3->setFrameShadow(QFrame::Shadow::Raised);
         gridLayout_6 = new QGridLayout(frame_3);
+        gridLayout_6->setSpacing(6);
+        gridLayout_6->setContentsMargins(11, 11, 11, 11);
         gridLayout_6->setObjectName("gridLayout_6");
         find_log = new QTextEdit(frame_3);
         find_log->setObjectName("find_log");
@@ -529,10 +565,12 @@ public:
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'\353\247\221\354\235\200 \352\263\240\353\224\225'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:'Ubuntu Sans'; font-size:24pt; font-weight:700;\">\353\257\274\355\230\270\354\235\230 \354\204\234\354\236\254</span></p></body></html>", nullptr));
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:'Ubuntu Sans'; font-size:24pt; font-weight:700;\">\353\257\274\355\230\270\354\235\230 \353\271\204\353\260\200\354\204\234\354\236\254</span></p></body></html>", nullptr));
         reg_gobtn->setText(QCoreApplication::translate("MainWindow", "\355\232\214\354\233\220\352\260\200\354\236\205", nullptr));
+        in_id->setText(QString());
         loginbtn->setText(QCoreApplication::translate("MainWindow", "\353\241\234\352\267\270\354\235\270", nullptr));
         id_label->setText(QCoreApplication::translate("MainWindow", "\354\225\204\354\235\264\353\224\224", nullptr));
+        in_pw->setText(QString());
         pw_label->setText(QCoreApplication::translate("MainWindow", "\353\271\204\353\260\200\353\262\210\355\230\270", nullptr));
         f_idbtn->setText(QCoreApplication::translate("MainWindow", "\354\225\204\354\235\264\353\224\224 \354\260\276\352\270\260", nullptr));
         f_pwbtn->setText(QCoreApplication::translate("MainWindow", "\353\271\204\353\260\200\353\262\210\355\230\270 \354\260\276\352\270\260", nullptr));
@@ -548,7 +586,6 @@ public:
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:"
                         "0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:'Ubuntu Sans'; font-size:20pt;\">\353\241\234\352\267\270\354\235\270</span></p>\n"
 "<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Ubuntu Sans'; font-size:20pt;\"><br /></p></body></html>", nullptr));
-        lbl->setText(QCoreApplication::translate("MainWindow", "TextLabel", nullptr));
         find_log_2->setHtml(QCoreApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
@@ -563,6 +600,14 @@ public:
         fp_idlb->setText(QCoreApplication::translate("MainWindow", "\354\225\204\354\235\264\353\224\224", nullptr));
         fp_pnlb->setText(QCoreApplication::translate("MainWindow", "\354\240\204\355\231\224\353\262\210\355\230\270", nullptr));
         fp_btn->setText(QCoreApplication::translate("MainWindow", "\353\271\204\353\260\200\353\262\210\355\230\270 \354\260\276\352\270\260", nullptr));
+        reg_nalb->setText(QCoreApplication::translate("MainWindow", "\354\235\264\353\246\204", nullptr));
+        reg_pnlb->setText(QCoreApplication::translate("MainWindow", "\354\240\204\355\231\224\353\262\210\355\230\270", nullptr));
+        pn_ckbtn->setText(QCoreApplication::translate("MainWindow", "\354\244\221\353\263\265\355\231\225\354\235\270", nullptr));
+        ovl_pn->setText(QCoreApplication::translate("MainWindow", "\354\244\221\353\263\265 \354\227\254\353\266\200\353\245\274 \355\231\225\354\235\270\355\225\230\354\204\270\354\232\224.", nullptr));
+        reg_idlb->setText(QCoreApplication::translate("MainWindow", "\354\225\204\354\235\264\353\224\224", nullptr));
+        id_ckbtn->setText(QCoreApplication::translate("MainWindow", "\354\244\221\353\263\265\355\231\225\354\235\270", nullptr));
+        ovl_id->setText(QCoreApplication::translate("MainWindow", "\354\244\221\353\263\265 \354\227\254\353\266\200\353\245\274 \355\231\225\354\235\270\355\225\230\354\204\270\354\232\224.", nullptr));
+        reg_pwlb->setText(QCoreApplication::translate("MainWindow", "\353\271\204\353\260\200\353\262\210\355\230\270", nullptr));
         reg_log->setHtml(QCoreApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
@@ -575,12 +620,6 @@ public:
 "<p align=\"center\" style=\" margin-top:0p"
                         "x; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:'Ubuntu Sans'; font-size:20pt;\">\355\232\214\354\233\220\352\260\200\354\236\205</span></p>\n"
 "<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Ubuntu Sans'; font-size:20pt;\"><br /></p></body></html>", nullptr));
-        reg_nalb->setText(QCoreApplication::translate("MainWindow", "\354\235\264\353\246\204", nullptr));
-        reg_pnlb->setText(QCoreApplication::translate("MainWindow", "\354\240\204\355\231\224\353\262\210\355\230\270", nullptr));
-        pn_ckbtn->setText(QCoreApplication::translate("MainWindow", "\354\244\221\353\263\265\355\231\225\354\235\270", nullptr));
-        reg_idlb->setText(QCoreApplication::translate("MainWindow", "\354\225\204\354\235\264\353\224\224", nullptr));
-        id_ckbtn->setText(QCoreApplication::translate("MainWindow", "\354\244\221\353\263\265\355\231\225\354\235\270", nullptr));
-        reg_pwlb->setText(QCoreApplication::translate("MainWindow", "\353\271\204\353\260\200\353\262\210\355\230\270", nullptr));
         reg_btn->setText(QCoreApplication::translate("MainWindow", "\355\232\214\354\233\220\352\260\200\354\236\205", nullptr));
         reg_log_2->setHtml(QCoreApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
@@ -590,6 +629,7 @@ public:
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'\353\247\221\354\235\200 \352\263\240\353\224\225'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:'Ubuntu Sans'; font-size:11pt;\">\353\251\224\354\235\270\355\231\224\353\251\264</span></p></body></html>", nullptr));
+        lbl->setText(QCoreApplication::translate("MainWindow", "TextLabel", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(all_tab), QCoreApplication::translate("MainWindow", "\354\240\204\354\262\264", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(author_tab), QCoreApplication::translate("MainWindow", "\354\236\221\352\260\200", nullptr));
         find_log->setHtml(QCoreApplication::translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
@@ -606,7 +646,7 @@ public:
         f_nmlb->setText(QCoreApplication::translate("MainWindow", "\354\235\264\353\246\204", nullptr));
         f_pnlb->setText(QCoreApplication::translate("MainWindow", "\354\240\204\355\231\224\353\262\210\355\230\270", nullptr));
         f_btn->setText(QCoreApplication::translate("MainWindow", "\354\225\204\354\235\264\353\224\224 \354\260\276\352\270\260", nullptr));
-        pushButton->setText(QCoreApplication::translate("MainWindow", "PushButton", nullptr));
+        pushButton->setText(QCoreApplication::translate("MainWindow", "\353\222\244\353\241\234\352\260\200\352\270\260", nullptr));
     } // retranslateUi
 
 };

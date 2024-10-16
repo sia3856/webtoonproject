@@ -55,6 +55,7 @@ private slots:
     void on_pushButton_sendAttachment_clicked();
     void slot_displayMessage(const QString& str);
     void send_rmsg(QTcpSocket* socket, QString fileType);
+    void send_rmsg(QTcpSocket* socket, QString fileType ,QString result);
 
 
 };

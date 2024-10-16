@@ -4,8 +4,23 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
     ui->stackedWidget->setCurrentWidget(ui->login); // 첫화면을 로그인 화면으로 출력
-    this->setWindowTitle("복이의 비밀서재"); // 프로그램 이름설정
+    this->setWindowTitle("민호의 비밀서재"); // 프로그램 이름설정
+    ui->in_id->setPlaceholderText("아이디를 입력하시오");
+    ui->in_pw->setPlaceholderText("비밀번호를 입력하시오");
+
+    ui->fp_inid->setPlaceholderText("아이디를 입력하시오");
+    ui->fp_inpn->setPlaceholderText("전화번호를 입력하시오");
+
+    ui->reg_pn->setPlaceholderText("전화번호를 입력하시오");
+    ui->reg_name->setPlaceholderText("이름을 입력하시오");
+    ui->reg_pw->setPlaceholderText("비밀번호를 입력하시오");
+    ui->reg_id->setPlaceholderText("아이디를 입력하시오");
+
+    ui->f_inname->setPlaceholderText("이름을 입력하시오");
+    ui->f_inpn->setPlaceholderText("전화번호를 입력하시오");
+
     overpn_cnt = 0;
     overid_cnt = 0;
 
@@ -40,7 +55,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     //테이블을 눌렀을떄
     connect(ui->test_table, &QTableView::clicked, this, &MainWindow::onTableCellClicked);
-
+    connect(ui->test_table, &QTableView::doubleClicked, this, &MainWindow::on_reg_gobtn_clicked);
+    connect(ui->reg_id, &QLineEdit::textChanged, this, &MainWindow::id_text_changed);
+    connect(ui->reg_pn, &QLineEdit::textChanged, this, &MainWindow::pn_text_changed);
 }
 
 MainWindow::~MainWindow()
@@ -89,6 +106,7 @@ void MainWindow::slot_readSocket()
     socketStream.startTransaction();
     socketStream >> buffer;
 
+
     // stream startTransaction 실행 문제시 에러 표시 후 함수 종료
     if(!socketStream.commitTransaction())
     {
@@ -113,18 +131,15 @@ void MainWindow::slot_readSocket()
     {
         // 파일 전송은, 1)저장될 파일 이름, 2) 파일 확장자 3) 파일 크기 정보가 필요하다.
         QString fileName = header.split(",")[1].split(":")[1];
-        QString ext = fileName.split(".")[1];
-        QString size = header.split(",")[2].split(":")[1].split(";")[0];
-        QPixmap *buf = new QPixmap(); //버퍼로 사용할 QPixmap 선언
+        QPixmap buf ; //버퍼로 사용할 QPixmap 선언
 
 
-        buf->loadFromData(buffer);
-        ui->lbl->setPixmap(*buf);
+        buf.loadFromData(buffer);
+        int newWidth = 100;
+        QPixmap scaledPixmap = buf.scaled(newWidth, buf.height() * newWidth / buf.width(), Qt::KeepAspectRatio);
 
-
-        // int newWidth = 430;
-        // QPixmap scaledPixmap = buf->scaled(newWidth, buf->height() * newWidth / buf->width(), Qt::KeepAspectRatio);
-        // ui->lbl->setPixmap(scaledPixmap);
+        ui->lbl->setPixmap(buf);
+        ui->lbl->setPixmap(scaledPixmap);
     }
     else if(fileType=="message")
     {
@@ -150,21 +165,67 @@ void MainWindow::slot_readSocket()
         ui->ovl_id->setText("중복된 아이디");
         ui->ovl_id->setStyleSheet("color: red;");
         overid_cnt = 0;
-
     }
     else if(fileType == "oidsuc")
-        {
-            ui->ovl_id->setText("사용가능한 아이디");
-            ui->ovl_id->setStyleSheet("color: green;");
-            overid_cnt = 1;
-        }
+    {
+        ui->ovl_id->setText("사용가능한 아이디");
+        ui->ovl_id->setStyleSheet("color: green;");
+        overid_cnt = 1;
+    }
+    else if(fileType == "loginsuc")
+    {
+        QMessageBox::information(this," ","로그인성공");
+        ui->stackedWidget->setCurrentWidget(ui->main_page);
+        ui->in_id->clear();
+        ui->in_pw->clear();
+        ui->pushButton->setText("로그아웃");
+        s_sendmsg("intro","");
+    }
+    else if(fileType == "loginfail")
+    {
+        QMessageBox::critical(this,"로그인실패","아이디 혹은 비밀번호가 맞지않습니다.");
+        ui->in_id->clear();
+        ui->in_pw->clear();
+    }
+    else if(fileType == "findsuc")
+    {
+        QString masg = "회원님의 아이디는 : "+buffer;
+        QMessageBox::information(this,"찾기 성공",masg);
+        ui->f_inname->clear();
+        ui->f_inpn->clear();
+        ui->stackedWidget->setCurrentWidget(ui->login);
+    }
+    else if(fileType == "findfail")
+    {
+        QMessageBox::critical(this,"오류","존재 하지 않는 유저입니다.");
+        ui->f_inname->clear();
+        ui->f_inpn->clear();
+    }
+    else if(fileType == "ffindsuc")
+    {
+        QString masg = "회원님의 비밀번호는 : "+buffer;
+        QMessageBox::information(this,"찾기 성공",masg);
+        ui->fp_inid->clear();
+        ui->fp_inpn->clear();
+        ui->stackedWidget->setCurrentWidget(ui->login);
+    }
+    else if(fileType == "ffindfail")
+    {
+        QMessageBox::critical(this,"오류","존재 하지 않는 유저입니다.");
+        ui->fp_inid->clear();
+        ui->fp_inpn->clear();
+    }
+    else if(fileType == "r_intro")
+    {
+        QString message = QString("%1").arg(QString::fromStdString(buffer.toStdString()));
+        emit signal_newMessage(message);
+    }
 
 
 }
 
 void MainWindow::slot_displayMessage(const QString& str)
 {
-    ui->test_bro->append(str);
     QString rstr = str;
 
     //rstr.remove(QRegularExpression("^\\d+ :: "));
@@ -192,8 +253,6 @@ void MainWindow::slot_displayMessage(const QString& str)
     ui->test_table->resizeColumnsToContents();
 
     ui->test_table->show();
-
-
 }
 
 
@@ -202,16 +261,40 @@ void MainWindow::onTableCellClicked(const QModelIndex &index)
     int row = index.row();
     int column = index.column();
     QVariant data = index.data();
-
+    row += 1;
+    QString r_row = QString::number(row);
+    s_sendmsg("sntst","ff");
 
     // 여기서 원하는 동작 수행
-    qDebug() << "Clicked cell:" << row << column<< data.toString();
+    qDebug() << "Clicked cell:" << r_row << column<< data.toString();
 }
 
 
 
 void MainWindow::on_pushButton_clicked()
 {
+
+
+    // ui->lbl->clear();
+    // ui->in_id->clear();
+    // ui->in_pw->clear();
+    // ui->fp_inid->clear();
+    // ui->fp_inpn->clear();
+    // ui->reg_id->clear();
+    // ui->reg_name->clear();
+    // ui->reg_pn->clear();
+    // ui->reg_pw->clear();
+    // ui->ovl_id->setText("중복 여부를 확인하세요.");
+    // ui->ovl_pn->setText("중복 여부를 확인하세요.");
+    // ui->ovl_id->setStyleSheet("color: black;");
+    // ui->ovl_pn->setStyleSheet("color: black;");
+    // ui->f_inname->clear();
+    // ui->f_inpn->clear();
+    if(ui->pushButton->text()== "로그아웃")
+    {
+        ui->pushButton->setText("뒤로가기");
+        QMessageBox::information(this,"로그아웃","로그아웃을 합니다.");
+    }
     ui->stackedWidget->setCurrentWidget(ui->login);
 }
 
@@ -233,10 +316,13 @@ void MainWindow::on_reg_gobtn_clicked()
     ui->stackedWidget->setCurrentWidget(ui->reg_page);
 }
 
-
+//로그인 버튼
 void MainWindow::on_loginbtn_clicked()
 {
-    ui->stackedWidget->setCurrentWidget(ui->main_page);
+    QString l_id = ui->in_id->text();
+    QString l_pw = ui->in_pw->text();
+    QString r_res = l_id +","+l_pw;
+    s_sendmsg("login",r_res);
 }
 
 
@@ -252,7 +338,7 @@ void MainWindow::on_tabWidget_tabBarClicked(int index)
     }
 }
 
-
+//회원가입 버튼
 void MainWindow::on_reg_btn_clicked()
 {
 
@@ -278,109 +364,92 @@ void MainWindow::on_reg_btn_clicked()
     }
     else
     {
-        if(m_socket)
-        {
-            if(m_socket->isOpen())
-            {
-                // ui에서 입력할 message를 가져와
-                QString r_res = r_name +","+r_pn+","+r_id+","+r_pw;
-                qDebug() << r_res;
-                // stream으로 보내는데
-                QDataStream socketStream(m_socket);
-                socketStream.setVersion(QDataStream::Qt_5_15);
-
-                // 헤더 부분에 fileType을 message로 설정한다.
-                QByteArray header;
-                header.prepend(QString("fileType:reg,fileName:null,fileSize:;").toUtf8());
-                header.resize(128);
-
-                // message 인코딩 설정하고, QByteArray에 할당하고
-                QByteArray byteArray = r_res.toUtf8();
-                // header 정보를 앞에 넣어준다.
-                byteArray.prepend(header);
-
-                // stream으로 byteArray 정보 전송
-                socketStream << byteArray;
-
-                // 메시지 입력창 리셋
-                ui->reg_name->clear();
-            }
-            else
-                QMessageBox::critical(this,"QTCPClient","Socket doesn't seem to be opened");
-        }
-        else
-            QMessageBox::critical(this,"QTCPClient","Not connected");
+        QString r_res = r_name +","+r_pn+","+r_id+","+r_pw;
+        s_sendmsg("reg",r_res);
+        QMessageBox::information(this," ","회원가입 성공");
+        ui->stackedWidget->setCurrentWidget(ui->login);
     }
 
 }
 
-
+//전화번호 중복 체크
 void MainWindow::on_pn_ckbtn_clicked()
 {
-
-    if(m_socket)
-    {
-        if(m_socket->isOpen())
-        {
-            QString rr_pn = ui->reg_pn->text();
-
-
-            QDataStream socketStream(m_socket);
-            socketStream.setVersion(QDataStream::Qt_5_15);
-
-            // 헤더 부분에 fileType을 message로 설정한다.
-            QByteArray header;
-            header.prepend(QString("fileType:overpn,fileName:null,fileSize:;").toUtf8());
-            header.resize(128);
-
-            // message 인코딩 설정하고, QByteArray에 할당하고
-            QByteArray byteArray = rr_pn.toUtf8();
-            // header 정보를 앞에 넣어준다.
-            byteArray.prepend(header);
-            qDebug() << byteArray;
-            // stream으로 byteArray 정보 전송
-            socketStream << byteArray;
-        }
-        else
-            QMessageBox::critical(this,"QTCPClient","Socket doesn't seem to be opened");
-    }
-    else
-        QMessageBox::critical(this,"QTCPClient","Not connected");
-
+    QString rr_pn = ui->reg_pn->text();
+    s_sendmsg("overpn",rr_pn);
 }
 
+void MainWindow::id_text_changed()
+{
+    ui->ovl_id->setText("중복 여부를 다시 확인하세요.");
+    ui->ovl_id->setStyleSheet("color: black;");
+    overid_cnt = 0;
+}
 
+void MainWindow::pn_text_changed()
+{
+    ui->ovl_pn->setText("중복 여부를 다시 확인하세요.");
+    ui->ovl_pn->setStyleSheet("color: black;");
+    overpn_cnt = 0;
+}
 
-
+//아이디 중복 체크
 void MainWindow::on_id_ckbtn_clicked()
+{
+    QString rr_id = ui->reg_id->text();
+    s_sendmsg("overid",rr_id);
+}
+
+//요청문 명령어 함수
+void MainWindow::s_sendmsg(QString req, QString msg)
 {
     if(m_socket)
     {
         if(m_socket->isOpen())
         {
-            QString rr_id = ui->reg_id->text();
+            // ui에서 입력할 message를 가져와
 
-
+            // stream으로 보내는데
             QDataStream socketStream(m_socket);
             socketStream.setVersion(QDataStream::Qt_5_15);
 
             // 헤더 부분에 fileType을 message로 설정한다.
             QByteArray header;
-            header.prepend(QString("fileType:overid,fileName:null,fileSize:;").toUtf8());
+            header.prepend(QString("fileType:%1,").arg(req).toUtf8());
             header.resize(128);
 
             // message 인코딩 설정하고, QByteArray에 할당하고
-            QByteArray byteArray = rr_id.toUtf8();
+            QByteArray byteArray = msg.toUtf8();
             // header 정보를 앞에 넣어준다.
             byteArray.prepend(header);
-            qDebug() << byteArray;
+
             // stream으로 byteArray 정보 전송
             socketStream << byteArray;
+
+            // 메시지 입력창 리셋
         }
         else
             QMessageBox::critical(this,"QTCPClient","Socket doesn't seem to be opened");
     }
     else
         QMessageBox::critical(this,"QTCPClient","Not connected");
+}
+
+
+void MainWindow::on_f_btn_clicked()
+{
+    QString fi_name = ui->f_inname->text();
+    QString fi_pn = ui->f_inpn->text();
+    QString r_msg = fi_name + "," +fi_pn;
+    s_sendmsg("findid",r_msg);
+}
+
+
+void MainWindow::on_fp_btn_clicked()
+{
+    QString fp_name = ui->fp_inid->text();
+    QString fp_pn = ui->fp_inpn->text();
+    QString r_msg = fp_name + "," +fp_pn;
+    s_sendmsg("findpw",r_msg);
 }
 

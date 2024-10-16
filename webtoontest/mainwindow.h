@@ -66,5 +66,10 @@ private slots:
     void on_reg_btn_clicked();
     void on_pn_ckbtn_clicked();
     void on_id_ckbtn_clicked();
+    void s_sendmsg(QString req,QString msg);
+    void on_f_btn_clicked();
+    void on_fp_btn_clicked();
+    void id_text_changed();
+    void pn_text_changed();
 };
 #endif // MAINWINDOW_H
