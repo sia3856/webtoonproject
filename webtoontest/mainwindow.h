@@ -41,6 +41,8 @@ private:
 
     QTcpSocket* m_socket;
     QString fileType;
+    int overpn_cnt;
+    int overid_cnt;
 
 signals:
     void signal_newMessage(QString);
@@ -61,5 +63,8 @@ private slots:
     void slot_displayMessage(const QString& str);
     void onTableCellClicked(const QModelIndex &index);
 
+    void on_reg_btn_clicked();
+    void on_pn_ckbtn_clicked();
+    void on_id_ckbtn_clicked();
 };
 #endif // MAINWINDOW_H

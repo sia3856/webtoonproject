@@ -54,6 +54,9 @@ private slots:
     void on_pushButton_sendMessage_clicked();
     void on_pushButton_sendAttachment_clicked();
     void slot_displayMessage(const QString& str);
+    void send_rmsg(QTcpSocket* socket, QString fileType);
+
+
 };
 
 #endif // MAINWINDOW_H
