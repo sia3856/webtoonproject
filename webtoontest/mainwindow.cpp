@@ -23,6 +23,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     overpn_cnt = 0;
     overid_cnt = 0;
+    intro_cnt = 0;
 
     m_socket = new QTcpSocket(this);
     m_socket->connectToHost(QHostAddress::LocalHost,8080);
@@ -55,9 +56,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     //테이블을 눌렀을떄
     connect(ui->test_table, &QTableView::clicked, this, &MainWindow::onTableCellClicked);
-    connect(ui->test_table, &QTableView::doubleClicked, this, &MainWindow::on_reg_gobtn_clicked);
+    connect(ui->test_table, &QTableView::doubleClicked, this, &MainWindow::go_to_list);
+
     connect(ui->reg_id, &QLineEdit::textChanged, this, &MainWindow::id_text_changed);
     connect(ui->reg_pn, &QLineEdit::textChanged, this, &MainWindow::pn_text_changed);
+
 }
 
 MainWindow::~MainWindow()
@@ -95,196 +98,230 @@ void MainWindow::slot_displayError(QAbstractSocket::SocketError socketError)
 
 void MainWindow::slot_readSocket()
 {
-    // QByteArray 타입의 buffer를 만들고
-    QByteArray buffer;
-
-    // 서버에 연결된 socket을 stream으로 연결한다.
-    QDataStream socketStream(m_socket);
-    socketStream.setVersion(QDataStream::Qt_5_15);
-
-    // stream으로 데이터를 읽어들이고, buffer로 넘기면
-    socketStream.startTransaction();
-    socketStream >> buffer;
-
-
-    // stream startTransaction 실행 문제시 에러 표시 후 함수 종료
-    if(!socketStream.commitTransaction())
+    while(m_socket->bytesAvailable())
     {
-        QString message = QString("%1 :: Waiting for more data to come..").arg(m_socket->socketDescriptor());
-        //emit signal_newMessage(message);
-        return;
-    }
+        // QByteArray 타입의 buffer를 만들고
+        QByteArray buffer;
 
-    // client 에서 보낸 payload(순수한 데이터, 전달 메시지)를
-    // buffer에서 처음 128 byte 부분만 읽어들여서 header 에 담고 fileType을 찾는다.
-    QString header = buffer.mid(0,128);
-    QString fileType = header.split(",")[0].split(":")[1];
+        // 서버에 연결된 socket을 stream으로 연결한다.
+        QDataStream socketStream(m_socket);
+        socketStream.setVersion(QDataStream::Qt_5_15);
+
+        // stream으로 데이터를 읽어들이고, buffer로 넘기면
+        socketStream.startTransaction();
+        socketStream >> buffer;
 
 
-    // buffer의 128 byte 이후 부분을
-    buffer = buffer.mid(128);
+        // stream startTransaction 실행 문제시 에러 표시 후 함수 종료
+        if(!socketStream.commitTransaction())
+        {
+            QString message = QString("%1 :: Waiting for more data to come..").arg(m_socket->socketDescriptor());
+            //emit signal_newMessage(message);
+            return;
+        }
 
-    // fileType이 attachment 라면 파일 수신 로직을 실행하고
-    // fileType이 message 라면 문장 수신 로직을 실핸한다.
+        // client 에서 보낸 payload(순수한 데이터, 전달 메시지)를
+        // buffer에서 처음 128 byte 부분만 읽어들여서 header 에 담고 fileType을 찾는다.
+        QString header = buffer.mid(0,128);
+        QString fileType = header.split(",")[0].split(":")[1];
 
-    if(fileType=="attachment")
-    {
-        // 파일 전송은, 1)저장될 파일 이름, 2) 파일 확장자 3) 파일 크기 정보가 필요하다.
-        QString fileName = header.split(",")[1].split(":")[1];
-        QPixmap buf ; //버퍼로 사용할 QPixmap 선언
-        // buf.loadFromData(buffer);
-        // // int newWidth = 100;
-        // // QPixmap scaledPixmap = buf.scaled(newWidth, buf.height() * newWidth / buf.width(), Qt::KeepAspectRatio);
 
-        // ui->lbl->setPixmap(buf);
-        // // ui->lbl->setPixmap(scaledPixmap);
-    }
-    else if(fileType=="message")
-    {
-        // 전송된 메시지를 출력한다.
-        QString message = QString("%1").arg(QString::fromStdString(buffer.toStdString()));
-        emit signal_newMessage(message);
-    }
-    else if(fileType =="opnfail")
-    {
-        ui->ovl_pn->setText("중복된 전화번호");
-        ui->ovl_pn->setStyleSheet("color: red;");
-        overpn_cnt = 0;
+        // buffer의 128 byte 이후 부분을
+        buffer = buffer.mid(128);
 
-    }
-    else if(fileType == "opnsuc")
-    {
-        ui->ovl_pn->setText("사용가능한 전화번호");
-        ui->ovl_pn->setStyleSheet("color: green;");
-        overpn_cnt = 1;
-    }
-    else if(fileType =="oidfail")
-    {
-        ui->ovl_id->setText("중복된 아이디");
-        ui->ovl_id->setStyleSheet("color: red;");
-        overid_cnt = 0;
-    }
-    else if(fileType == "oidsuc")
-    {
-        ui->ovl_id->setText("사용가능한 아이디");
-        ui->ovl_id->setStyleSheet("color: green;");
-        overid_cnt = 1;
-    }
-    else if(fileType == "loginsuc")
-    {
-        QMessageBox::information(this," ","로그인성공");
-        ui->stackedWidget->setCurrentWidget(ui->main_page);
-        ui->in_id->clear();
-        ui->in_pw->clear();
-        ui->pushButton->setText("로그아웃");
-        s_sendmsg("intro","");
-    }
-    else if(fileType == "loginfail")
-    {
-        QMessageBox::critical(this,"로그인실패","아이디 혹은 비밀번호가 맞지않습니다.");
-        ui->in_id->clear();
-        ui->in_pw->clear();
-    }
-    else if(fileType == "findsuc")
-    {
-        QString masg = "회원님의 아이디는 : "+buffer;
-        QMessageBox::information(this,"찾기 성공",masg);
-        ui->f_inname->clear();
-        ui->f_inpn->clear();
-        ui->stackedWidget->setCurrentWidget(ui->login);
-    }
-    else if(fileType == "findfail")
-    {
-        QMessageBox::critical(this,"오류","존재 하지 않는 유저입니다.");
-        ui->f_inname->clear();
-        ui->f_inpn->clear();
-    }
-    else if(fileType == "ffindsuc")
-    {
-        QString masg = "회원님의 비밀번호는 : "+buffer;
-        QMessageBox::information(this,"찾기 성공",masg);
-        ui->fp_inid->clear();
-        ui->fp_inpn->clear();
-        ui->stackedWidget->setCurrentWidget(ui->login);
-    }
-    else if(fileType == "ffindfail")
-    {
-        QMessageBox::critical(this,"오류","존재 하지 않는 유저입니다.");
-        ui->fp_inid->clear();
-        ui->fp_inpn->clear();
-    }
-    else if(fileType == "r_intro")
-    {
-        QString message = QString("%1").arg(QString::fromStdString(buffer.toStdString()));
-        emit signal_newMessage(message);
-    }
-    else if(fileType=="rogosend")
-    {
-        // 파일 전송은, 1)저장될 파일 이름, 2) 파일 확장자 3) 파일 크기 정보가 필요하다.
-        QString fileName = header.split(",")[1].split(":")[1];
-        QPixmap buf ; //버퍼로 사용할 QPixmap 선언
-        buf.loadFromData(buffer);
-        int newWidth = 250;
-        QPixmap scaledPixmap = buf.scaled(newWidth, buf.height() * newWidth / buf.width(), Qt::KeepAspectRatio);
+        // fileType이 attachment 라면 파일 수신 로직을 실행하고
+        // fileType이 message 라면 문장 수신 로직을 실핸한다.
 
-        //ui->lbl->setPixmap(buf);
-        ui->lbl->setPixmap(scaledPixmap);
-    }
+        if(fileType=="attachment")// 나중에 지울꺼
+        {
+            // 파일 전송은, 1)저장될 파일 이름, 2) 파일 확장자 3) 파일 크기 정보가 필요하다.
+            QString fileName = header.split(",")[1].split(":")[1];
+            QPixmap buf ; //버퍼로 사용할 QPixmap 선언
+            // buf.loadFromData(buffer);
+            // // int newWidth = 100;
+            // // QPixmap scaledPixmap = buf.scaled(newWidth, buf.height() * newWidth / buf.width(), Qt::KeepAspectRatio);
 
+            // ui->lbl->setPixmap(buf);
+            // // ui->lbl->setPixmap(scaledPixmap);
+        }
+        // else if(fileType=="message")
+        // {
+        //     // 전송된 메시지를 출력한다.
+        //     QString message = QString("%1").arg(QString::fromStdString(buffer.toStdString()));
+        //     emit signal_newMessage(message);
+        // }
+        else if(fileType =="opnfail")
+        {
+            ui->ovl_pn->setText("중복된 전화번호");
+            ui->ovl_pn->setStyleSheet("color: red;");
+            overpn_cnt = 0;
+
+        }
+        else if(fileType == "opnsuc")
+        {
+            ui->ovl_pn->setText("사용가능한 전화번호");
+            ui->ovl_pn->setStyleSheet("color: green;");
+            overpn_cnt = 1;
+        }
+        else if(fileType =="oidfail")
+        {
+            ui->ovl_id->setText("중복된 아이디");
+            ui->ovl_id->setStyleSheet("color: red;");
+            overid_cnt = 0;
+        }
+        else if(fileType == "oidsuc")
+        {
+            ui->ovl_id->setText("사용가능한 아이디");
+            ui->ovl_id->setStyleSheet("color: green;");
+            overid_cnt = 1;
+        }
+        else if(fileType == "loginsuc")
+        {
+            QMessageBox::information(this," ","로그인성공");
+            ui->stackedWidget->setCurrentWidget(ui->main_page);
+            ui->in_id->clear();
+            ui->in_pw->clear();
+            ui->pushButton->setText("로그아웃");
+            if(intro_cnt == 0)
+            {
+                s_sendmsg("intro","");
+                intro_cnt = 1;
+            }
+        }
+        else if(fileType == "loginfail")
+        {
+            QMessageBox::critical(this,"로그인실패","아이디 혹은 비밀번호가 맞지않습니다.");
+            ui->in_id->clear();
+            ui->in_pw->clear();
+        }
+        else if(fileType == "findsuc")
+        {
+            QString masg = "회원님의 아이디는 : "+buffer;
+            QMessageBox::information(this,"찾기 성공",masg);
+            ui->f_inname->clear();
+            ui->f_inpn->clear();
+            ui->stackedWidget->setCurrentWidget(ui->login);
+        }
+        else if(fileType == "findfail")
+        {
+            QMessageBox::critical(this,"오류","존재 하지 않는 유저입니다.");
+            ui->f_inname->clear();
+            ui->f_inpn->clear();
+        }
+        else if(fileType == "ffindsuc")
+        {
+            QString masg = "회원님의 비밀번호는 : "+buffer;
+            QMessageBox::information(this,"찾기 성공",masg);
+            ui->fp_inid->clear();
+            ui->fp_inpn->clear();
+            ui->stackedWidget->setCurrentWidget(ui->login);
+        }
+        else if(fileType == "ffindfail")
+        {
+            QMessageBox::critical(this,"오류","존재 하지 않는 유저입니다.");
+            ui->fp_inid->clear();
+            ui->fp_inpn->clear();
+        }
+        else if(fileType == "r_intro")
+        {
+            //QString message = QString("%1").arg(QString::fromStdString(buffer.toStdString()));
+            QString message = buffer;
+            emit signal_newMessage(message);
+        }
+        else if(fileType=="rogosend")
+        {
+            // 파일 전송은, 1)저장될 파일 이름, 2) 파일 확장자 3) 파일 크기 정보가 필요하다.
+            QPixmap buf ; //버퍼로 사용할 QPixmap 선언
+            buf.loadFromData(buffer);
+            int newWidth = 250;
+            QPixmap scaledPixmap = buf.scaled(newWidth, buf.height() * newWidth / buf.width(), Qt::KeepAspectRatio);
+
+            //ui->lbl->setPixmap(buf);
+            ui->openbtn->setIcon(scaledPixmap);
+            ui->openbtn->setIconSize(scaledPixmap.rect().size());
+            ui->openbtn2->setIcon(scaledPixmap);
+            ui->openbtn2->setIconSize(scaledPixmap.rect().size());
+            //ui->lbl->setPixmap(scaledPixmap);
+            //ui->toonlbl->setPixmap(scaledPixmap2);
+        }
+        else if(fileType == "listviewres")
+        {
+            QString sstr = buffer;
+            qDebug() << sstr;
+            QStringList rows = sstr.split("\n");  // \n 기준으로 자름
+            QStandardItemModel *viewmodel = new QStandardItemModel();
+            viewmodel->setColumnCount(3); // 칼럼 갯수 생성
+            viewmodel->setHorizontalHeaderLabels(QStringList() << "제목" << "작가"<<"회차"); // 칼럼명 지정
+            bool hasData = false;
+
+            for (const QString &row : rows) {
+                QStringList columns = row.split("/");
+                if (columns.size() == 3) {
+                    QList<QStandardItem*> viewitems;
+                    viewitems << new QStandardItem(columns[0].trimmed()) << new QStandardItem(columns[1].trimmed()) << new QStandardItem(columns[2].trimmed());
+                    viewmodel->appendRow(viewitems);
+                    hasData = true;
+                }
+            }
+            if (!hasData) {
+                QList<QStandardItem*> noDataItems;
+                noDataItems << new QStandardItem("데이터가 없습니다") << new QStandardItem("ㅠㅠㅠ") << new QStandardItem("빠른 시일내 업데이트 하겠습니다.");
+                viewmodel->appendRow(noDataItems);
+            }
+            // QTableView 생성 및 모델 설정
+            ui->listviwer->setModel(viewmodel);
+            // 열 너비 자동 조정
+            ui->listviwer->resizeColumnsToContents();
+            ui->listviwer->show();
+
+        }
+    }
 
 }
 
 void MainWindow::slot_displayMessage(const QString& str)
 {
-    // QString rstr = str;
-
-    QStringList rows = str.split("\n");
-
-    QStandardItemModel *model = new QStandardItemModel();
-    model->setColumnCount(3); // 제목과 작가 두 열 설정
-    model->setHorizontalHeaderLabels(QStringList() << "제목" << "작가"<<"요일");
+    QStringList rows = str.split("\n");  // \n 기준으로 자름
+    //QStandardItemModel *model = new QStandardItemModel();
+    model->setColumnCount(3); // 칼럼 갯수 생성
+    model->setHorizontalHeaderLabels(QStringList() << "제목" << "작가"<<"연재요일"); // 칼럼명 지정
 
     for (const QString &row : rows) {
         QStringList columns = row.split("/");
         if (columns.size() == 3) {
             QList<QStandardItem*> items;
-            items << new QStandardItem(columns[0].trimmed())
-                  << new QStandardItem(columns[1].trimmed())
-                  << new QStandardItem(columns[2].trimmed());
+            items << new QStandardItem(columns[0].trimmed()) << new QStandardItem(columns[1].trimmed()) << new QStandardItem(columns[2].trimmed());
             model->appendRow(items);
         }
     }
-
     // QTableView 생성 및 모델 설정
-
     ui->test_table->setModel(model);
-
     // 열 너비 자동 조정
     ui->test_table->resizeColumnsToContents();
-
     ui->test_table->show();
 }
 
 
 void MainWindow::onTableCellClicked(const QModelIndex &index)
 {
-    int row = index.row();
-    int column = index.column();
-    QVariant data = index.data();
-    row += 1;
-    QString r_row = QString::number(row);
+    rrow = index.row();
+    ccolumn = index.column();
+    //QVariant data = index.data();
+    rrow += 1;
+    QString r_row = QString::number(rrow);
     s_sendmsg("sntst",r_row);
+    int cccolumn = 0;
+
+    rdata = index.sibling(rrow-1,cccolumn).data().toString();
+
 
     // 여기서 원하는 동작 수행
-    qDebug() << "Clicked cell:" << r_row << column<< data.toString();
+    qDebug() << "Clicked cell:" << r_row << ccolumn<< rdata;
 }
-
 
 
 void MainWindow::on_pushButton_clicked()
 {
-
-
     // ui->lbl->clear();
     // ui->in_id->clear();
     // ui->in_pw->clear();
@@ -325,6 +362,25 @@ void MainWindow::on_reg_gobtn_clicked()
 {
     ui->stackedWidget->setCurrentWidget(ui->reg_page);
 }
+void MainWindow::go_to_list()
+{
+    qDebug() << "Clicked cell:" <<rdata;
+    s_sendmsg("listview",rdata);
+
+    ui->stackedWidget->setCurrentWidget(ui->list_view);
+    //rrow +=1;
+    //QModelIndex index = ui->test_table->model()->index(rrow, ccolumn);
+    //ui->test_table->hide();
+    //emit ui->test_table->clicked(index);
+    //ui->lbl->clear();
+
+    // ui->listviwer->setModel(model);
+    // // 열 너비 자동 조정
+    // ui->listviwer->resizeColumnsToContents();
+    // ui->listviwer->show();
+}
+
+
 
 //로그인 버튼
 void MainWindow::on_loginbtn_clicked()
@@ -461,5 +517,18 @@ void MainWindow::on_fp_btn_clicked()
     QString fp_pn = ui->fp_inpn->text();
     QString r_msg = fp_name + "," +fp_pn;
     s_sendmsg("findpw",r_msg);
+}
+
+void MainWindow::on_openbtn_clicked()
+{
+    if (!ui->openbtn->icon().isNull()) {
+        // 아이콘이 있을 경우 go_to_list() 함수 실행
+        go_to_list();
+    } else {
+        QMessageBox::critical(this,"오류","웹툰을 선택해주세요.");
+    }
+
+
+    //go_to_list();
 }
 
