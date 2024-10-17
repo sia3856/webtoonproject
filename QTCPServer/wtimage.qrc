@@ -1,7 +1,17 @@
 <RCC>
     <qresource prefix="/res">
         <file>images/test.jpeg</file>
-        <file>images/1706960559166.jpeg</file>
-        <file>images/dorororo.jpeg</file>
+        <file>images/dororo.png</file>
+    </qresource>
+    <qresource prefix="/rogo">
+        <file>images/dororogo.png</file>
+        <file>images/yangrogo</file>
+        <file>images/bodorogo.png</file>
+        <file>images/dongel.png</file>
+        <file>images/jotcat.png</file>
+        <file>images/kyuruga.png</file>
+        <file>images/pepe.png</file>
+        <file>images/haku.jpg</file>
+        <file>images/chiikawa.png</file>
     </qresource>
 </RCC>

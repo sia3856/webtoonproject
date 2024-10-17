@@ -132,14 +132,12 @@ void MainWindow::slot_readSocket()
         // 파일 전송은, 1)저장될 파일 이름, 2) 파일 확장자 3) 파일 크기 정보가 필요하다.
         QString fileName = header.split(",")[1].split(":")[1];
         QPixmap buf ; //버퍼로 사용할 QPixmap 선언
+        // buf.loadFromData(buffer);
+        // // int newWidth = 100;
+        // // QPixmap scaledPixmap = buf.scaled(newWidth, buf.height() * newWidth / buf.width(), Qt::KeepAspectRatio);
 
-
-        buf.loadFromData(buffer);
-        int newWidth = 100;
-        QPixmap scaledPixmap = buf.scaled(newWidth, buf.height() * newWidth / buf.width(), Qt::KeepAspectRatio);
-
-        ui->lbl->setPixmap(buf);
-        ui->lbl->setPixmap(scaledPixmap);
+        // ui->lbl->setPixmap(buf);
+        // // ui->lbl->setPixmap(scaledPixmap);
     }
     else if(fileType=="message")
     {
@@ -220,27 +218,39 @@ void MainWindow::slot_readSocket()
         QString message = QString("%1").arg(QString::fromStdString(buffer.toStdString()));
         emit signal_newMessage(message);
     }
+    else if(fileType=="rogosend")
+    {
+        // 파일 전송은, 1)저장될 파일 이름, 2) 파일 확장자 3) 파일 크기 정보가 필요하다.
+        QString fileName = header.split(",")[1].split(":")[1];
+        QPixmap buf ; //버퍼로 사용할 QPixmap 선언
+        buf.loadFromData(buffer);
+        int newWidth = 250;
+        QPixmap scaledPixmap = buf.scaled(newWidth, buf.height() * newWidth / buf.width(), Qt::KeepAspectRatio);
+
+        //ui->lbl->setPixmap(buf);
+        ui->lbl->setPixmap(scaledPixmap);
+    }
 
 
 }
 
 void MainWindow::slot_displayMessage(const QString& str)
 {
-    QString rstr = str;
+    // QString rstr = str;
 
-    //rstr.remove(QRegularExpression("^\\d+ :: "));
-    QStringList rows = rstr.split("\n");
+    QStringList rows = str.split("\n");
 
     QStandardItemModel *model = new QStandardItemModel();
-    model->setColumnCount(2); // 제목과 작가 두 열 설정
-    model->setHorizontalHeaderLabels(QStringList() << "제목" << "작가");
+    model->setColumnCount(3); // 제목과 작가 두 열 설정
+    model->setHorizontalHeaderLabels(QStringList() << "제목" << "작가"<<"요일");
 
     for (const QString &row : rows) {
         QStringList columns = row.split("/");
-        if (columns.size() == 2) {
+        if (columns.size() == 3) {
             QList<QStandardItem*> items;
             items << new QStandardItem(columns[0].trimmed())
-                  << new QStandardItem(columns[1].trimmed());
+                  << new QStandardItem(columns[1].trimmed())
+                  << new QStandardItem(columns[2].trimmed());
             model->appendRow(items);
         }
     }
@@ -263,7 +273,7 @@ void MainWindow::onTableCellClicked(const QModelIndex &index)
     QVariant data = index.data();
     row += 1;
     QString r_row = QString::number(row);
-    s_sendmsg("sntst","ff");
+    s_sendmsg("sntst",r_row);
 
     // 여기서 원하는 동작 수행
     qDebug() << "Clicked cell:" << r_row << column<< data.toString();

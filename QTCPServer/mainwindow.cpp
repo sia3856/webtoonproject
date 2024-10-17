@@ -65,17 +65,17 @@ MainWindow::~MainWindow()
 bool MainWindow::initializeDataBase()
 {
 
-    // m_db = QSqlDatabase::addDatabase("QMYSQL");
-    // m_db.setHostName("127.0.0.1");
-    // m_db.setDatabaseName("webtoonpj");
-    // m_db.setUserName("SIA");
-    // m_db.setPassword("1234");
-
-    m_db = QSqlDatabase::addDatabase("QODBC");
+    m_db = QSqlDatabase::addDatabase("QMYSQL");
     m_db.setHostName("127.0.0.1");
     m_db.setDatabaseName("webtoonpj");
-    m_db.setUserName("root");
+    m_db.setUserName("SIA");
     m_db.setPassword("1234");
+
+    // m_db = QSqlDatabase::addDatabase("QODBC");
+    // m_db.setHostName("127.0.0.1");
+    // m_db.setDatabaseName("webtoonpj");
+    // m_db.setUserName("root");
+    // m_db.setPassword("1234");
 
 
 
@@ -333,31 +333,57 @@ void MainWindow::slot_readSocket()
 
     else if(fileType == "sntst")
     {
+        QSqlQuery qry;
+        QString f_buffer = buffer;
+        QString file = "fefefe";
         QString receiver = ui->comboBox_receiver->currentText();
-
-
-        QString filePath = (":/res/images/1706960559166.jpeg");
-        if(filePath.isEmpty())
+        qDebug()<< f_buffer;
+        qry.prepare("SELECT w_rogo FROM webtoon WHERE w_num = :rogo");
+        qry.bindValue(":rogo", f_buffer);
+        qry.exec();
+        if (qry.next()) // 중복일 경우
         {
-            QMessageBox::critical(this,"QTCPClient","You haven't selected any attachment!");
-            return;
-        }
-        if(receiver=="Broadcast")
-        {
-            foreach (QTcpSocket* socket, qset_connectedSKT)
+            file = qry.value(0).toString();
+            // qDebug()<<file;
+            // qDebug()<<"여기아";
+            //send_rmsg(socket, "rogosend",file);
+            if(file.isEmpty())
             {
-                sendAttachment(socket, filePath);
-                sendAttachment(socket, filePath);
+                QMessageBox::critical(this,"QTCPClient","You haven't selected any attachment!");
+                return;
+            }
+            if(receiver=="Broadcast")
+            {
+                foreach (QTcpSocket* socket, qset_connectedSKT)
+                {
+                    sendAttachment(socket, file);
+                    sendAttachment(socket, file);
+                }
             }
         }
+
+
+
+        // if(file.isEmpty())
+        // {
+        //     QMessageBox::critical(this,"QTCPClient","You haven't selected any attachment!");
+        //     return;
+        // }
+        // if(receiver=="Broadcast")
+        // {
+        //     foreach (QTcpSocket* socket, qset_connectedSKT)
+        //     {
+        //         sendAttachment(socket, file);
+        //         sendAttachment(socket, file);
+        //     }
+        // }
     }
     else if(fileType=="intro")
     {
         QSqlQuery qry;
         QString str;
 
-
-        qry.prepare("SELECT w_nam,w_author FROM webtoon ");
+        qry.prepare("SELECT w_nam,w_author,w_day FROM webtoon ");
         if (qry.exec())
         {
             QStringList rows;
@@ -365,7 +391,8 @@ void MainWindow::slot_readSocket()
             {
                 QString w_nam = qry.value(0).toString();
                 QString w_author = qry.value(1).toString();
-                rows << QString("%1/%2").arg(w_nam).arg(w_author);
+                QString w_day = qry.value(2).toString();
+                rows << QString("%1/%2/%3").arg(w_nam).arg(w_author).arg(w_day);
             }
             str = rows.join("\n");
         }
@@ -570,7 +597,7 @@ void MainWindow::sendAttachment(QTcpSocket* socket, QString filePath)
 
                 // 3헤더 부분에 fileType을 attachment로 설정한다.
                 QByteArray header;
-                header.prepend(QString("fileType:attachment,fileName:%1,fileSize:%2;").arg(fileName).arg(m_file.size()).toUtf8());
+                header.prepend(QString("fileType:rogosend,fileName:%1,fileSize:%2;").arg(fileName).arg(m_file.size()).toUtf8());
                 header.resize(128);
 
                 // 1-2QByteArray에 file을 byte로 할당하고
