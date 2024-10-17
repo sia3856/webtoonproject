@@ -65,17 +65,17 @@ MainWindow::~MainWindow()
 bool MainWindow::initializeDataBase()
 {
 
-    m_db = QSqlDatabase::addDatabase("QMYSQL");
-    m_db.setHostName("127.0.0.1");
-    m_db.setDatabaseName("webtoonpj");
-    m_db.setUserName("SIA");
-    m_db.setPassword("1234");
-
-    // m_db = QSqlDatabase::addDatabase("QODBC");
+    // m_db = QSqlDatabase::addDatabase("QMYSQL");
     // m_db.setHostName("127.0.0.1");
     // m_db.setDatabaseName("webtoonpj");
-    // m_db.setUserName("root");
+    // m_db.setUserName("SIA");
     // m_db.setPassword("1234");
+
+    m_db = QSqlDatabase::addDatabase("QODBC");
+    m_db.setHostName("127.0.0.1");
+    m_db.setDatabaseName("webtoonpj");
+    m_db.setUserName("root");
+    m_db.setPassword("1234");
 
 
 
@@ -173,292 +173,296 @@ void MainWindow::slot_displayError(QAbstractSocket::SocketError socketError)
 // 첨부파일 또는 메시지 수신 처리
 void MainWindow::slot_readSocket()
 {
+
     // [ex.02.5.1]
     // 슬롯 함수가 실행되면, sender()를 통해 signal을 발생시킨 객체를 찾아 return
     // 이 슬롯(slot_readSocket)은 서버에 연결된 socket의 readyread 시그널에 대한 슬롯으로
     // 연결 메시지를 보낸 socket을 찾을 수 있다.
     QTcpSocket* socket = reinterpret_cast<QTcpSocket*>(sender());
-
-    // QByteArray 타입의 buffer를 만들고
-    QByteArray buffer;
-
-    // 서버에 연결된 socket을 stream으로 연결한다.
-    QDataStream socketStream(socket);
-    socketStream.setVersion(QDataStream::Qt_5_15);
-
-    // stream으로 데이터를 읽어들이고, buffer로 넘기면
-    socketStream.startTransaction();
-    socketStream >> buffer;
-
-    // stream startTransaction 실행 문제시 에러 표시 후 함수 종료
-    if(!socketStream.commitTransaction())
+    while(socket->bytesAvailable())
     {
-        QString message = QString("%1 :: Waiting for more data to come..").arg(socket->socketDescriptor());
-        emit singal_newMessage(message);
-        return;
-    }
+        // QByteArray 타입의 buffer를 만들고
+        QByteArray buffer;
 
-    // client 에서 보낸 payload(순수한 데이터, 전달 메시지)를
-    // buffer에서 처음 128 byte 부분만 읽어들여서 header 에 담고 fileType을 찾는다.
-    QString header = buffer.mid(0,128);
-    QString fileType = header.split(",")[0].split(":")[1];
+        // 서버에 연결된 socket을 stream으로 연결한다.
+        QDataStream socketStream(socket);
+        socketStream.setVersion(QDataStream::Qt_5_15);
 
-    // buffer의 128 byte 이후 부분을
-    buffer = buffer.mid(128);
+        // stream으로 데이터를 읽어들이고, buffer로 넘기면
+        socketStream.startTransaction();
+        socketStream >> buffer;
 
-    // fileType이 attachment 라면 파일 수신 로직을 실행하고
-    // fileType이 message 라면 문장 수신 로직을 실핸한다.
-    if(fileType=="reg")
-    {
-        qDebug() << buffer;
-        QString r_buffer = buffer;
-        QString r_name = r_buffer.split(",")[0];
-        QString r_pn = r_buffer.split(",")[1];
-        QString r_id = r_buffer.split(",")[2];
-        QString r_pw = r_buffer.split(",")[3];
-
-        QSqlQuery qry;
-        qry.prepare("INSERT INTO user "
-                    "(u_name,u_id,u_pw,u_pn) "
-                    "VALUES "
-                    "(:name, :id, :pw, :pn)");
-
-        qry.bindValue(":name", r_name);
-        qry.bindValue(":id", r_id);
-        qry.bindValue(":pw", r_pw);
-        qry.bindValue(":pn", r_pn);
-
-        if( !qry.exec() )
-            qDebug() << qry.lastError();
-    }
-    else if(fileType=="overpn")
-    {
-        // 아이디 중복 확인
-        QSqlQuery qry;
-        QString r_buffer = buffer;
-        qry.prepare("SELECT * FROM user WHERE u_pn = :pn");
-        qry.bindValue(":pn", r_buffer);
-        qry.exec();
-        if (qry.next()) // 중복일 경우
+        // stream startTransaction 실행 문제시 에러 표시 후 함수 종료
+        if(!socketStream.commitTransaction())
         {
-            send_rmsg(socket, "opnfail");
-        }
-        else
-        {
-            send_rmsg(socket, "opnsuc");
+            QString message = QString("%1 :: Waiting for more data to come..").arg(socket->socketDescriptor());
+            emit singal_newMessage(message);
+            return;
         }
 
-    }
-    else if(fileType=="overid")
-    {
-        // 아이디 중복 확인
-        QSqlQuery qry;
-        QString r_buffer = buffer;
-        qry.prepare("SELECT * FROM user WHERE u_id = :id");
-        qry.bindValue(":id", r_buffer);
-        qry.exec();
-        if (qry.next()) // 중복일 경우
-        {
-            send_rmsg(socket, "oidfail");
-        }
-        else
-        {
-            send_rmsg(socket, "oidsuc");
-        }
+        // client 에서 보낸 payload(순수한 데이터, 전달 메시지)를
+        // buffer에서 처음 128 byte 부분만 읽어들여서 header 에 담고 fileType을 찾는다.
+        QString header = buffer.mid(0,128);
+        QString fileType = header.split(",")[0].split(":")[1];
 
-    }
-    else if(fileType=="login")
-    {
-        QSqlQuery qry;
-        QString l_buffer = buffer;
-        QString l_id = l_buffer.split(",")[0];
-        QString l_pw = l_buffer.split(",")[1];
+        // buffer의 128 byte 이후 부분을
+        buffer = buffer.mid(128);
 
-        qry.prepare("SELECT * FROM user WHERE u_id = :id and u_pw = :pw");
-        qry.bindValue(":id", l_id);
-        qry.bindValue(":pw", l_pw);
-        qry.exec();
-        if (qry.next()) // 중복일 경우
+        // fileType이 attachment 라면 파일 수신 로직을 실행하고
+        // fileType이 message 라면 문장 수신 로직을 실핸한다.
+        if(fileType=="reg")
         {
-            send_rmsg(socket, "loginsuc");
-        }
-        else
-        {
-            send_rmsg(socket, "loginfail");
-        }
+            qDebug() << buffer;
+            QString r_buffer = buffer;
+            QString r_name = r_buffer.split(",")[0];
+            QString r_pn = r_buffer.split(",")[1];
+            QString r_id = r_buffer.split(",")[2];
+            QString r_pw = r_buffer.split(",")[3];
 
-    }
-    else if(fileType=="findid")// 아이디찾기find
-    {
-        QSqlQuery qry;
-        QString f_buffer = buffer;
-        QString f_name = f_buffer.split(",")[0];
-        QString f_pn = f_buffer.split(",")[1];
+            QSqlQuery qry;
+            qry.prepare("INSERT INTO user "
+                        "(u_name,u_id,u_pw,u_pn) "
+                        "VALUES "
+                        "(:name, :id, :pw, :pn)");
 
-        qry.prepare("SELECT u_id FROM user WHERE u_name = :name and u_pn = :pn");
-        qry.bindValue(":name", f_name);
-        qry.bindValue(":pn", f_pn);
-        qry.exec();
-        if (qry.next()) // 중복일 경우
-        {
-            QString f_id = qry.value(0).toString();
-            send_rmsg(socket, "findsuc",f_id);
-        }
-        else
-        {
-            send_rmsg(socket, "findfail");
-        }
-    }
-    else if(fileType=="findpw")// 비밀번호찾기
-    {
-        QSqlQuery qry;
-        QString f_buffer = buffer;
-        QString fp_id = f_buffer.split(",")[0];
-        QString fp_pn = f_buffer.split(",")[1];
+            qry.bindValue(":name", r_name);
+            qry.bindValue(":id", r_id);
+            qry.bindValue(":pw", r_pw);
+            qry.bindValue(":pn", r_pn);
 
-        qry.prepare("SELECT u_pw FROM user WHERE u_id = :id and u_pn = :pn");
-        qry.bindValue(":id", fp_id);
-        qry.bindValue(":pn", fp_pn);
-        qry.exec();
-        if (qry.next()) // 중복일 경우
-        {
-            QString fp_pw = qry.value(0).toString();
-            send_rmsg(socket, "ffindsuc",fp_pw);
+            if( !qry.exec() )
+                qDebug() << qry.lastError();
         }
-        else
+        else if(fileType=="overpn")
         {
-            send_rmsg(socket, "ffindfail");
-        }
-    }
-
-    else if(fileType == "sntst")
-    {
-        QSqlQuery qry;
-        QString f_buffer = buffer;
-        QString file = "fefefe";
-        QString receiver = ui->comboBox_receiver->currentText();
-        qDebug()<< f_buffer;
-        qry.prepare("SELECT w_rogo FROM webtoon WHERE w_num = :rogo");
-        qry.bindValue(":rogo", f_buffer);
-        qry.exec();
-        if (qry.next()) // 중복일 경우
-        {
-            file = qry.value(0).toString();
-            // qDebug()<<file;
-            // qDebug()<<"여기아";
-            //send_rmsg(socket, "rogosend",file);
-            if(file.isEmpty())
+            // 아이디 중복 확인
+            QSqlQuery qry;
+            QString r_buffer = buffer;
+            qry.prepare("SELECT * FROM user WHERE u_pn = :pn");
+            qry.bindValue(":pn", r_buffer);
+            qry.exec();
+            if (qry.next()) // 중복일 경우
             {
-                QMessageBox::critical(this,"QTCPClient","You haven't selected any attachment!");
-                return;
+                send_rmsg(socket, "opnfail");
             }
-            if(receiver=="Broadcast")
+            else
             {
-                foreach (QTcpSocket* socket, qset_connectedSKT)
+                send_rmsg(socket, "opnsuc");
+            }
+        }
+        else if(fileType=="overid")
+        {
+            // 아이디 중복 확인
+            QSqlQuery qry;
+            QString r_buffer = buffer;
+            qry.prepare("SELECT * FROM user WHERE u_id = :id");
+            qry.bindValue(":id", r_buffer);
+            qry.exec();
+            if (qry.next()) // 중복일 경우
+            {
+                send_rmsg(socket, "oidfail");
+            }
+            else
+            {
+                send_rmsg(socket, "oidsuc");
+            }
+        }
+        else if(fileType=="login")
+        {
+            QSqlQuery qry;
+            QString l_buffer = buffer;
+            QString l_id = l_buffer.split(",")[0];
+            QString l_pw = l_buffer.split(",")[1];
+
+            qry.prepare("SELECT * FROM user WHERE u_id = :id and u_pw = :pw");
+            qry.bindValue(":id", l_id);
+            qry.bindValue(":pw", l_pw);
+            qry.exec();
+            if (qry.next()) // 중복일 경우
+            {
+                send_rmsg(socket, "loginsuc");
+            }
+            else
+            {
+                send_rmsg(socket, "loginfail");
+            }
+
+        }
+        else if(fileType=="findid")// 아이디찾기find
+        {
+            QSqlQuery qry;
+            QString f_buffer = buffer;
+            QString f_name = f_buffer.split(",")[0];
+            QString f_pn = f_buffer.split(",")[1];
+
+            qry.prepare("SELECT u_id FROM user WHERE u_name = :name and u_pn = :pn");
+            qry.bindValue(":name", f_name);
+            qry.bindValue(":pn", f_pn);
+            qry.exec();
+            if (qry.next()) // 중복일 경우
+            {
+                QString f_id = qry.value(0).toString();
+                send_rmsg(socket, "findsuc",f_id);
+            }
+            else
+            {
+                send_rmsg(socket, "findfail");
+            }
+        }
+        else if(fileType=="findpw")// 비밀번호찾기
+        {
+            QSqlQuery qry;
+            QString f_buffer = buffer;
+            QString fp_id = f_buffer.split(",")[0];
+            QString fp_pn = f_buffer.split(",")[1];
+
+            qry.prepare("SELECT u_pw FROM user WHERE u_id = :id and u_pn = :pn");
+            qry.bindValue(":id", fp_id);
+            qry.bindValue(":pn", fp_pn);
+            qry.exec();
+            if (qry.next()) // 중복일 경우
+            {
+                QString fp_pw = qry.value(0).toString();
+                send_rmsg(socket, "ffindsuc",fp_pw);
+            }
+            else
+            {
+                send_rmsg(socket, "ffindfail");
+            }
+        }
+        else if(fileType == "sntst")
+        {
+            QSqlQuery qry;
+            QString f_buffer = buffer;
+            QString file = "fefefe";
+            QString receiver = ui->comboBox_receiver->currentText();
+            qDebug()<< f_buffer;
+            qry.prepare("SELECT w_rogo FROM webtoon WHERE w_num = :rogo");
+            qry.bindValue(":rogo", f_buffer);
+            qry.exec();
+            if (qry.next()) // 중복일 경우
+            {
+                file = qry.value(0).toString();
+                // qDebug()<<file;
+                // qDebug()<<"여기아";
+                //send_rmsg(socket, "rogosend",file);
+                if(file.isEmpty())
                 {
-                    sendAttachment(socket, file);
-                    sendAttachment(socket, file);
+                    QMessageBox::critical(this,"QTCPClient","You haven't selected any attachment!");
+                    return;
+                }
+                if(receiver=="Broadcast")
+                {
+                    foreach (QTcpSocket* socket, qset_connectedSKT)
+                    {
+                        sendAttachment(socket, file);
+                        sendAttachment(socket, file);
+                    }
                 }
             }
         }
-
-
-
-        // if(file.isEmpty())
-        // {
-        //     QMessageBox::critical(this,"QTCPClient","You haven't selected any attachment!");
-        //     return;
-        // }
-        // if(receiver=="Broadcast")
-        // {
-        //     foreach (QTcpSocket* socket, qset_connectedSKT)
-        //     {
-        //         sendAttachment(socket, file);
-        //         sendAttachment(socket, file);
-        //     }
-        // }
-    }
-    else if(fileType=="intro")
-    {
-        QSqlQuery qry;
-        QString str;
-
-        qry.prepare("SELECT w_nam,w_author,w_day FROM webtoon ");
-        if (qry.exec())
+        else if(fileType=="intro")
         {
-            QStringList rows;
-            while (qry.next())
+            QSqlQuery qry;
+            QString str;
+
+            qry.prepare("SELECT w_nam,w_author,w_day FROM webtoon ");
+            if (qry.exec())
             {
-                QString w_nam = qry.value(0).toString();
-                QString w_author = qry.value(1).toString();
-                QString w_day = qry.value(2).toString();
-                rows << QString("%1/%2/%3").arg(w_nam).arg(w_author).arg(w_day);
-            }
-            str = rows.join("\n");
-        }
-        else
-        {
-            qDebug() << "쿼리 실행 실패:" << qry.lastError().text();
-            return;
-        }
-        send_rmsg(socket,"r_intro",str);
-
-    }
-
-
-
-    else if(fileType=="attachment")
-    {
-        // 파일 전송은, 1)저장될 파일 이름, 2) 파일 확장자 3) 파일 크기 정보가 필요하다.
-        QString fileName = header.split(",")[1].split(":")[1];
-        QString ext = fileName.split(".")[1];
-        QString size = header.split(",")[2].split(":")[1].split(";")[0];
-
-        // 파일 전송 메시지를 받으면, 메시지 박스를 띄워서 전송 받을 것인지 확인한다.
-        // 메시지 박스에서 yes를 선택하면 파일을 읽는다.
-        if (QMessageBox::Yes == (QMessageBox::question(this, "QTCPServer", QString("You are receiving an attachment from sd:%1 of size: %2 bytes, called %3. Do you want to accept it?").arg(socket->socketDescriptor()).arg(size).arg(fileName))))
-        {
-            // 저장될 파일의 경로를 설정하고, 파일 이름과, 확장자를 설정한다.
-            QString filePath = QFileDialog::getSaveFileName(this, tr("Save File"), QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)+"/"+fileName, QString("File (*.%1)").arg(ext));
-
-            // file 객체를 위에서 설정한 경로를 기반으로 연결하고
-            QFile file(filePath);
-
-            // file 객체를 열고, buffer에 들어있는 byte를 쓴다(내보낸다. 통신이랑 같다).
-            if(file.open(QIODevice::WriteOnly))
-            {
-                file.write(buffer);
-
-                // 파일이 저장되는 것에 대한 메시지를 ui에 출력한다.
-                QString message = QString("INFO :: Attachment from sd:%1 successfully stored on disk under the path %2").arg(socket->socketDescriptor()).arg(QString(filePath));
-                emit singal_newMessage(message);
+                QStringList rows;
+                while (qry.next())
+                {
+                    QString w_nam = qry.value(0).toString();
+                    QString w_author = qry.value(1).toString();
+                    QString w_day = qry.value(2).toString();
+                    rows << QString("%1/%2/%3").arg(w_nam).arg(w_author).arg(w_day);
+                }
+                str = rows.join("\n");
             }
             else
-                QMessageBox::critical(this,"QTCPServer", "An error occurred while trying to write the attachment.");
+            {
+                qDebug() << "쿼리 실행 실패:" << qry.lastError().text();
+                return;
+            }
+            send_rmsg(socket,"r_intro",str);
         }
-        else
+        else if(fileType=="listview")
         {
-            // 메시지 박스에서 No 전송 거부시 메시지를 출력한다.
-            QString message = QString("INFO :: Attachment from sd:%1 discarded").arg(socket->socketDescriptor());
+            QSqlQuery qry;
+            QString str;
+            qry.prepare("SELECT DISTINCT w_nam,w_author,wt_day from webtoon  join address  on w_num = wt_id where w_nam = :res order by wt_day desc ");
+            qry.bindValue(":res", buffer);
+            if (qry.exec())
+            {
+                QStringList rows;
+                while (qry.next())
+                {
+                    QString w_nam = qry.value(0).toString();
+                    QString w_author = qry.value(1).toString();
+                    QString wt_day = qry.value(2).toString();
+                    rows << QString("%1/%2/%3").arg(w_nam).arg(w_author).arg(wt_day);
+                }
+                str = rows.join("\n");
+            }
+            else
+            {
+                qDebug() << "쿼리 실행 실패:" << qry.lastError().text();
+                return;
+            }
+            send_rmsg(socket,"listviewres",str);
+        }
+        else if(fileType=="attachment")
+        {
+            // 파일 전송은, 1)저장될 파일 이름, 2) 파일 확장자 3) 파일 크기 정보가 필요하다.
+            QString fileName = header.split(",")[1].split(":")[1];
+            QString ext = fileName.split(".")[1];
+            QString size = header.split(",")[2].split(":")[1].split(";")[0];
+
+            // 파일 전송 메시지를 받으면, 메시지 박스를 띄워서 전송 받을 것인지 확인한다.
+            // 메시지 박스에서 yes를 선택하면 파일을 읽는다.
+            if (QMessageBox::Yes == (QMessageBox::question(this, "QTCPServer", QString("You are receiving an attachment from sd:%1 of size: %2 bytes, called %3. Do you want to accept it?").arg(socket->socketDescriptor()).arg(size).arg(fileName))))
+            {
+                // 저장될 파일의 경로를 설정하고, 파일 이름과, 확장자를 설정한다.
+                QString filePath = QFileDialog::getSaveFileName(this, tr("Save File"), QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)+"/"+fileName, QString("File (*.%1)").arg(ext));
+
+                // file 객체를 위에서 설정한 경로를 기반으로 연결하고
+                QFile file(filePath);
+
+                // file 객체를 열고, buffer에 들어있는 byte를 쓴다(내보낸다. 통신이랑 같다).
+                if(file.open(QIODevice::WriteOnly))
+                {
+                    file.write(buffer);
+
+                    // 파일이 저장되는 것에 대한 메시지를 ui에 출력한다.
+                    QString message = QString("INFO :: Attachment from sd:%1 successfully stored on disk under the path %2").arg(socket->socketDescriptor()).arg(QString(filePath));
+                    emit singal_newMessage(message);
+                }
+                else
+                    QMessageBox::critical(this,"QTCPServer", "An error occurred while trying to write the attachment.");
+            }
+            else
+            {
+                // 메시지 박스에서 No 전송 거부시 메시지를 출력한다.
+                QString message = QString("INFO :: Attachment from sd:%1 discarded").arg(socket->socketDescriptor());
+                emit singal_newMessage(message);
+            }
+        }
+        else if(fileType=="message")
+        {
+            // 전송된 메시지를 서버에서 출력한다.
+            QString message = QString("%1 :: %2").arg(socket->socketDescriptor()).arg(QString::fromStdString(buffer.toStdString()));
             emit singal_newMessage(message);
         }
     }
-    else if(fileType=="message")
-    {
-        // 전송된 메시지를 서버에서 출력한다.
-        QString message = QString("%1 :: %2").arg(socket->socketDescriptor()).arg(QString::fromStdString(buffer.toStdString()));
-        emit singal_newMessage(message);
-    }
 }
 
-// [ex.02.8]
+
 // 서버에서 메시지를 보낼 때,
 // 1) 서버에 연결된 특정 대상에게 전송하거나
 // 2) 연결된 모든 대상에게 전송하도록 선택한다.(Broadcast)
 void MainWindow::on_pushButton_sendMessage_clicked()
 {
     QString receiver = ui->comboBox_receiver->currentText();
-
     // Broadcast 라면, qset_connectedSKT 에 저장된 모든 대상에게 메시지 전송
     if(receiver=="Broadcast")
     {
@@ -479,12 +483,11 @@ void MainWindow::on_pushButton_sendMessage_clicked()
             }
         }
     }
-
     // 메시지 입력창 리셋
     ui->lineEdit_message->clear();
 }
 
-// [ex.02.9]
+
 // 서버에서 파일을 보낼 때
 void MainWindow::on_pushButton_sendAttachment_clicked()
 {
@@ -522,12 +525,11 @@ void MainWindow::on_pushButton_sendAttachment_clicked()
     ui->lineEdit_message->clear();
 }
 
-// [ex.02.10]
+
 void MainWindow::sendMessage(QTcpSocket* socket)
 {
     QSqlQuery qry;
     QString str;
-
 
     qry.prepare("SELECT w_nam,w_author FROM webtoon ");
     if (qry.exec()) {
@@ -548,8 +550,6 @@ void MainWindow::sendMessage(QTcpSocket* socket)
         if(socket->isOpen())
         {
             //1 ui에서 입력할 message를 가져와
-
-
             //2 stream으로 보내는데
             QDataStream socketStream(socket);
             socketStream.setVersion(QDataStream::Qt_5_15);
@@ -576,7 +576,7 @@ void MainWindow::sendMessage(QTcpSocket* socket)
         QMessageBox::critical(this,"QTCPServer","Not connected");
 }
 
-// [ex.02.11]
+
 void MainWindow::sendAttachment(QTcpSocket* socket, QString filePath)
 {
     if(socket)
@@ -620,13 +620,13 @@ void MainWindow::sendAttachment(QTcpSocket* socket, QString filePath)
         QMessageBox::critical(this,"QTCPServer","Not connected");
 }
 
-// [ex.02.12]
+
 void MainWindow::slot_displayMessage(const QString& str)
 {
     ui->textBrowser_receivedMessages->append(str);
 }
 
-// [ex.02.13]
+
 void MainWindow::refreshComboBox(){
     ui->comboBox_receiver->clear();
     ui->comboBox_receiver->addItem("Broadcast");
@@ -642,9 +642,6 @@ void MainWindow::send_rmsg(QTcpSocket* socket, QString fileType)
     {
         if(socket->isOpen())
         {
-            //1 ui에서 입력할 message를 가져와
-
-
             //2 stream으로 보내는데
             QDataStream socketStream(socket);
             socketStream.setVersion(QDataStream::Qt_5_15);
@@ -668,6 +665,8 @@ void MainWindow::send_rmsg(QTcpSocket* socket, QString fileType)
     else
         QMessageBox::critical(this,"QTCPServer","Not connected");
 }
+
+
 void MainWindow::send_rmsg(QTcpSocket* socket, QString fileType,QString result)
 {
 
@@ -675,9 +674,6 @@ void MainWindow::send_rmsg(QTcpSocket* socket, QString fileType,QString result)
     {
         if(socket->isOpen())
         {
-            //1 ui에서 입력할 message를 가져와
-
-
             //2 stream으로 보내는데
             QDataStream socketStream(socket);
             socketStream.setVersion(QDataStream::Qt_5_15);
