@@ -43,6 +43,11 @@ private:
     QString fileType;
     int overpn_cnt;
     int overid_cnt;
+    int intro_cnt;
+    int rrow;
+    int ccolumn;
+    QString rdata;
+    QStandardItemModel *model = new QStandardItemModel();
 
 signals:
     void signal_newMessage(QString);
@@ -56,6 +61,7 @@ private slots:
     void on_f_idbtn_clicked();
 
     void on_f_pwbtn_clicked();
+    void go_to_list();
 
     void on_reg_gobtn_clicked();
     void on_loginbtn_clicked();
@@ -71,5 +77,6 @@ private slots:
     void on_fp_btn_clicked();
     void id_text_changed();
     void pn_text_changed();
+    void on_openbtn_clicked();
 };
 #endif // MAINWINDOW_H
